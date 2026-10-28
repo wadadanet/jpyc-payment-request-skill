@@ -42,6 +42,8 @@
 
 - Coinbase Wallet, OKX Wallet, Phantom, Rabby, Rainbow, imToken, SafePal, Uniswap Wallet, Backpack and Ginco publish no prefilled send link as of October 2026, so treat them as not supported and fall back to the address and amount as text.
 
+- HashPort Wallet publishes no send link either, even though it is the most common wallet among Japanese JPYC holders, renewed from the Expo 2025 digital wallet. Its documented payment flows use QR codes inside its own merchant system, and its developer integrations are partner only, so treat it as not supported and fall back to the address and amount as text.
+
 - Zerion documents EIP-681 QR scanning in its store release notes, so the EIP-681 QR code can work there when the user has a second screen. Treat that as the only documented exception.
 
 ## Verify the transfer

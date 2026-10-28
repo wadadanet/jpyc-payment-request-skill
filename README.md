@@ -51,7 +51,7 @@ https://metamask.app.link/send/<contract>@<chainId>/transfer?address=<recipient>
 | Bitget Wallet | `https://bkcode.vip?action=send&chain=matic&contract=<contract>&to=<to>&amount=<amount>&actionId=<uuid>&version=1` | ドキュメントに明記なし | 公式ドキュメント（実機未検証） |
 | TokenPocket | `tpoutside://pull.activity?param=<URLエンコードしたJSON>`（action: transfer） | 10進数＋decimalフィールド | 公式ドキュメント（実機未検証） |
 
-対応していないウォレット（2026年10月時点、公式に送金リンクの形式が無いもの）：Coinbase Wallet、OKX Wallet、Phantom、Rabby、Rainbow、imToken、SafePal、Uniswap Wallet、Backpack、Ginco など。Zerionのみ、EIP-681のQR読み取りがストアの更新情報で言及されています。
+対応していないウォレット（2026年10月時点、公式に送金リンクの形式が無いもの）：Coinbase Wallet、OKX Wallet、Phantom、Rabby、Rainbow、imToken、SafePal、Uniswap Wallet、Backpack、Ginco、HashPort Wallet など。HashPort Walletは日本のJPYC保有者では最も使われているウォレット（万博のEXPO2025デジタルウォレットの後継）ですが、送金リンクは公開されておらず、決済は自社加盟店のQRコード経由が公式の導線です。Zerionのみ、EIP-681のQR読み取りがストアの更新情報で言及されています。
 
 ## 使い方
 
