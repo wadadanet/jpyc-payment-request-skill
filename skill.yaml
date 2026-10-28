@@ -1,0 +1,5 @@
+name: "jpyc_payment_request"
+title: "JPYC Payment Requests"
+description: "Prepare JPYC payment requests the user approves and signs in their own wallet, then verify the transfer on chain."
+category: "Finance"
+include_in_prompt: false
