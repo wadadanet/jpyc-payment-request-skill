@@ -28,6 +28,18 @@
 
 - Offer a QR code only when the user has a second screen or a printed copy to scan.
 
+## Serve a payment page for other wallets
+
+- Host the template at payment-page/payment.html on any static host when the user's wallet has no send deep link. Pass the contract, recipient, amount and chain as query parameters, or bake them into a copy of the page for a single request.
+
+- Detect an injected provider when the page opens inside a wallet browser, and offer a pay button that requests accounts, switches to the payment chain and calls eth_sendTransaction with the transfer calldata. The wallet still shows the final confirmation and collects the signature.
+
+- Offer open-in-wallet buttons beside the pay button. MetaMask opens a page through https://metamask.app.link/dapp/ followed by the page address without its scheme, and Trust Wallet through https://link.trustwallet.com/open_url with coin_id 966 for Polygon and the encoded page URL.
+
+- Keep the QR code and the raw EIP-681 URI on the page as the fallback for every other wallet. Inline the QR library so the page works as one self-contained file with no external dependencies.
+
+- Treat the page URL as temporary. Use an unguessable address, put no personal notes on the page, and delete or unpublish the page after the payment is confirmed.
+
 ## Verify the transfer
 
 - Read the recipient balanceOf before and after the expected transfer, and report the exact amount that arrived.

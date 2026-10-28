@@ -39,6 +39,18 @@ https://metamask.app.link/send/<contract>@<chainId>/transfer?address=<recipient>
 - `SKILL.md` — エージェント向けの手順書本体（このリポジトリの主役）
 - `skill.yaml` — スキルのメタデータ
 - `scripts/build_payment_link.py` — 支払いリンクを生成するサンプルスクリプト
+- `payment-page/payment.html` — MetaMask以外のウォレットにも対応する支払いページ（単一HTML）
+- `payment-page/README.md` — 支払いページの使い方
+
+## 支払いページ（他のウォレット向け）
+
+ディープリンクはウォレットごとに仕様が違い、そもそも存在しないウォレットもあります。そこで、送金内容を表示するだけの静的ページを1枚用意し、ウォレットのアプリ内ブラウザで開いてもらう方式も用意しました。
+
+- ページがウォレット内ブラウザを検出すると、そのウォレット自身に送金確認画面を出させます（登録やWalletConnectのProject IDは不要）
+- 通常ブラウザでは「MetaMaskで開く」「Trust Walletで開く」ボタンと、EIP-681のQRコードを表示します
+- ページに載るのは宛先・金額・コントラクト（すべて公開情報）だけで、送金には開いた本人のウォレットでの署名が必須です。一時的なURLで公開し、支払い確認後に消す運用を想定しています
+
+詳しくは `payment-page/README.md` を参照してください。
 
 ## 使い方
 
