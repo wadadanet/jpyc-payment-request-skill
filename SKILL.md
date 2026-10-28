@@ -10,9 +10,9 @@
 
 ## Identify the token first
 
-- Know that two different tokens answer to JPYC. The regulated JPYC issued in 2025 uses contract 0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29, and the older JPY Coin v2 uses 0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB.
+- Target the regulated JPYC issued in 2025 at contract 0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29, with 18 decimals and the same address across EVM chains.
 
-- Confirm which token the user holds before building any request, from the contract address shown in their wallet or by reading the token over RPC. Both tokens use 18 decimals and keep the same contract address across EVM chains.
+- Confirm the contract in the user's wallet matches that address before building any request, from the address shown in their wallet or by reading the token over RPC.
 
 - Read token facts with `muse.exec` and curl against a public Polygon RPC. Call decimals with data 0x313ce567 and balanceOf with selector 0x70a08231 followed by the padded address.
 
@@ -32,11 +32,11 @@
 
 - MetaMask, verified end to end in a real payment. Token link https://metamask.app.link/send/<contract>@<chainId>/transfer?address=<recipient>&uint256=<raw amount>, and native coin link https://metamask.app.link/send/<address>@<chainId>?value=<wei>. Current MetaMask docs use the host link.metamask.io with the same structure.
 
-- Trust Wallet, format verified in the official developer docs. Link https://link.trustwallet.com/send?asset=c<coin>_t<contract>&address=<recipient>&amount=<amount>, where <coin> is the SLIP-44 coin id, 966 for Polygon, 60 for Ethereum and 714 for BNB Chain. The docs example passes the amount in human units, though the docs never state the unit, so confirm with a small test payment on first use.
+- Trust Wallet, format verified in the official developer docs. Link https://link.trustwallet.com/send?asset=c<coin>_t<contract>&address=<recipient>&amount=<amount>, where <coin> is the SLIP-44 coin id, 966 for Polygon, 60 for Ethereum and 714 for BNB Chain. The docs example passes the amount in human units, though the docs never state the unit.
 
-- Bitget Wallet, format verified in the official docs and not yet device tested. Android universal link https://bkcode.vip?action=send&chain=<chain>&contract=<contract>&to=<recipient>&amount=<amount>&actionId=<uuid>&version=1, with the iOS scheme bitkeep://bkconnect carrying the same parameters. The Polygon chain name is matic. The docs do not state the amount unit, so confirm with a small test payment on first use.
+- Bitget Wallet, format verified in the official docs and not yet device tested. Android universal link https://bkcode.vip?action=send&chain=<chain>&contract=<contract>&to=<recipient>&amount=<amount>&actionId=<uuid>&version=1, with the iOS scheme bitkeep://bkconnect carrying the same parameters. The Polygon chain name is matic. The docs do not state the amount unit.
 
-- TokenPocket, format verified in the official docs and not yet device tested. Link tpoutside://pull.activity?param=<url encoded JSON> with action transfer, a decimal amount and a separate decimal field. Confirm with a small test payment on first use.
+- TokenPocket, format verified in the official docs and not yet device tested. Link tpoutside://pull.activity?param=<url encoded JSON> with action transfer, a decimal amount and a separate decimal field.
 
 ## Wallets without a documented send link
 

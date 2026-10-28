@@ -21,7 +21,6 @@ import urllib.parse
 import uuid
 
 JPYC_NEW = "0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29"  # 2025 JPYC (Polygon/Ethereum/Avalanche)
-JPYC_OLD = "0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB"  # legacy JPY Coin v2
 
 SLIP44 = {1: 60, 137: 966, 56: 714}  # Trust Wallet coin ids
 BITGET_CHAIN = {1: "eth", 137: "matic", 56: "bnb", 8453: "base", 42161: "arbitrum", 10: "optimism"}
@@ -47,8 +46,8 @@ def trust(contract, to, amount, chain):
         sys.exit(f"Trust Wallet: no verified SLIP-44 coin id for chain {chain}")
     asset = f"c{SLIP44[chain]}_t{contract}"
     q = urllib.parse.urlencode({"asset": asset, "address": to, "amount": amount})
-    print("note: Trust amount units follow the docs example (human units). "
-          "Confirm with a small test payment on first use.", file=sys.stderr)
+    print("note: Trust amount units follow the docs example (human units); "
+          "the docs do not state the unit explicitly.", file=sys.stderr)
     return f"https://link.trustwallet.com/send?{q}"
 
 
@@ -59,9 +58,8 @@ def bitget(contract, to, amount, chain):
         "action": "send", "chain": BITGET_CHAIN[chain], "contract": contract,
         "to": to, "amount": amount, "actionId": str(uuid.uuid4()), "version": "1",
     })
-    print("note: Bitget docs do not state the amount unit and the format has not "
-          "been device-tested. Confirm with a small test payment on first use.",
-          file=sys.stderr)
+    print("note: Bitget docs do not state the amount unit, and the format "
+          "has not been device-tested.", file=sys.stderr)
     return f"https://bkcode.vip?{q}"
 
 
@@ -81,8 +79,8 @@ def tokenpocket(contract, to, amount, chain, decimals, symbol):
         "dappName": "JPYC Payment Request",
         "actionId": str(uuid.uuid4()),
     }
-    print("note: TokenPocket format follows the official docs (Ethereum example). "
-          "Confirm with a small test payment on first use.", file=sys.stderr)
+    print("note: TokenPocket format follows the official docs "
+          "(Ethereum example).", file=sys.stderr)
     return "tpoutside://pull.activity?param=" + urllib.parse.quote(
         json.dumps(payload, separators=(",", ":")), safe="")
 
