@@ -18,27 +18,31 @@
 
 - Prefer https://polygon-bor-rpc.publicnode.com and https://polygon.drpc.org, which both answered in testing. Expect free tiers to cap eth_getLogs ranges, and switch endpoints instead of retrying a capped one.
 
-## Build the request as a deep link
+## Ask which wallet, then build that wallet's link
 
-- Encode an ERC-20 transfer as an EIP-681 URI in the form ethereum:<contract>@<chainId>/transfer?address=<recipient>&uint256=<amount>. Multiply the JPYC amount by 10^18 for the uint256 value, and use chainId 137 for Polygon.
+- Ask the user which wallet app they will pay from before building anything, unless the conversation already establishes it. Remember the answer for next time instead of asking again.
 
-- Send a MetaMask deep link when the user reads chat on the same phone as the wallet, because a QR code on that screen cannot be scanned. Rewrite the URI as https://metamask.app.link/send/<contract>@<chainId>/transfer?address=<recipient>&uint256=<amount>.
+- Look the wallet up in the supported list below and generate its link exactly in that format with scripts/build_payment_link.py. Each wallet defines its own format and its own amount convention, so never reuse one wallet's link shape for another.
 
-- Build a native gas token request the same way with https://metamask.app.link/send/<address>@<chainId>?value=<wei>.
+- Say plainly that a wallet is not supported when it is missing from the list, and hand over the recipient address and the exact amount as copyable text for manual entry. Never improvise a link format, and never substitute a hosted payment page.
 
-- Offer a QR code only when the user has a second screen or a printed copy to scan.
+- Encode the transfer internally as an EIP-681 URI in the form ethereum:<contract>@<chainId>/transfer?address=<recipient>&uint256=<amount>, multiplying the JPYC amount by 10^18 and using chainId 137 for Polygon. Offer it as a QR code only when the user has a second screen or a printed copy to scan.
 
-## Serve a payment page for other wallets
+## Supported wallets
 
-- Host the template at payment-page/payment.html on any static host when the user's wallet has no send deep link. Pass the contract, recipient, amount and chain as query parameters, or bake them into a copy of the page for a single request.
+- MetaMask, verified end to end in a real payment. Token link https://metamask.app.link/send/<contract>@<chainId>/transfer?address=<recipient>&uint256=<raw amount>, and native coin link https://metamask.app.link/send/<address>@<chainId>?value=<wei>. Current MetaMask docs use the host link.metamask.io with the same structure.
 
-- Detect an injected provider when the page opens inside a wallet browser, and offer a pay button that requests accounts, switches to the payment chain and calls eth_sendTransaction with the transfer calldata. The wallet still shows the final confirmation and collects the signature.
+- Trust Wallet, format verified in the official developer docs. Link https://link.trustwallet.com/send?asset=c<coin>_t<contract>&address=<recipient>&amount=<amount>, where <coin> is the SLIP-44 coin id, 966 for Polygon, 60 for Ethereum and 714 for BNB Chain. The docs example passes the amount in human units, though the docs never state the unit, so confirm with a small test payment on first use.
 
-- Offer open-in-wallet buttons beside the pay button. MetaMask opens a page through https://metamask.app.link/dapp/ followed by the page address without its scheme, and Trust Wallet through https://link.trustwallet.com/open_url with coin_id 966 for Polygon and the encoded page URL.
+- Bitget Wallet, format verified in the official docs and not yet device tested. Android universal link https://bkcode.vip?action=send&chain=<chain>&contract=<contract>&to=<recipient>&amount=<amount>&actionId=<uuid>&version=1, with the iOS scheme bitkeep://bkconnect carrying the same parameters. The Polygon chain name is matic. The docs do not state the amount unit, so confirm with a small test payment on first use.
 
-- Keep the QR code and the raw EIP-681 URI on the page as the fallback for every other wallet. Inline the QR library so the page works as one self-contained file with no external dependencies.
+- TokenPocket, format verified in the official docs and not yet device tested. Link tpoutside://pull.activity?param=<url encoded JSON> with action transfer, a decimal amount and a separate decimal field. Confirm with a small test payment on first use.
 
-- Treat the page URL as temporary. Use an unguessable address, put no personal notes on the page, and delete or unpublish the page after the payment is confirmed.
+## Wallets without a documented send link
+
+- Coinbase Wallet, OKX Wallet, Phantom, Rabby, Rainbow, imToken, SafePal, Uniswap Wallet, Backpack and Ginco publish no prefilled send link as of October 2026, so treat them as not supported and fall back to the address and amount as text.
+
+- Zerion documents EIP-681 QR scanning in its store release notes, so the EIP-681 QR code can work there when the user has a second screen. Treat that as the only documented exception.
 
 ## Verify the transfer
 

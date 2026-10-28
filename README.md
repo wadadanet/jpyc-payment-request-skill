@@ -38,35 +38,36 @@ https://metamask.app.link/send/<contract>@<chainId>/transfer?address=<recipient>
 
 - `SKILL.md` — エージェント向けの手順書本体（このリポジトリの主役）
 - `skill.yaml` — スキルのメタデータ
-- `scripts/build_payment_link.py` — 支払いリンクを生成するサンプルスクリプト
-- `payment-page/payment.html` — MetaMask以外のウォレットにも対応する支払いページ（単一HTML）
-- `payment-page/README.md` — 支払いページの使い方
+- `scripts/build_payment_link.py` — ウォレット別に支払いリンクを生成するスクリプト
 
-## 支払いページ（他のウォレット向け）
+## 対応ウォレット
 
-ディープリンクはウォレットごとに仕様が違い、そもそも存在しないウォレットもあります。そこで、送金内容を表示するだけの静的ページを1枚用意し、ウォレットのアプリ内ブラウザで開いてもらう方式も用意しました。
+ディープリンクはウォレットごとに仕様がバラバラです。このスキルでは、まずユーザーに「どのウォレットを使っているか」を聞き、対応表にあるウォレットだけ、その形式でリンクを生成します。対応表にないウォレットは、無理に代替案を作らず「対応していない」と正直に伝え、宛先アドレスと金額を手入力用に渡します。
 
-- ページがウォレット内ブラウザを検出すると、そのウォレット自身に送金確認画面を出させます（登録やWalletConnectのProject IDは不要）
-- 通常ブラウザでは「MetaMaskで開く」「Trust Walletで開く」ボタンと、EIP-681のQRコードを表示します
-- ページに載るのは宛先・金額・コントラクト（すべて公開情報）だけで、送金には開いた本人のウォレットでの署名が必須です。一時的なURLで公開し、支払い確認後に消す運用を想定しています
+| ウォレット | 送金リンク | 金額の形式 | 根拠 |
+| --- | --- | --- | --- |
+| MetaMask | `https://metamask.app.link/send/<contract>@<chain>/transfer?address=<to>&uint256=<raw>` | 最小単位の整数 | 実送金で検証済み |
+| Trust Wallet | `https://link.trustwallet.com/send?asset=c<coin>_t<contract>&address=<to>&amount=<amount>` | 人間単位（ドキュメントの例より） | 公式開発者ドキュメント |
+| Bitget Wallet | `https://bkcode.vip?action=send&chain=matic&contract=<contract>&to=<to>&amount=<amount>&actionId=<uuid>&version=1` | ドキュメントに明記なし | 公式ドキュメント（実機未検証） |
+| TokenPocket | `tpoutside://pull.activity?param=<URLエンコードしたJSON>`（action: transfer） | 10進数＋decimalフィールド | 公式ドキュメント（実機未検証） |
 
-詳しくは `payment-page/README.md` を参照してください。
+対応していないウォレット（2026年10月時点、公式に送金リンクの形式が無いもの）：Coinbase Wallet、OKX Wallet、Phantom、Rabby、Rainbow、imToken、SafePal、Uniswap Wallet、Backpack、Ginco など。Zerionのみ、EIP-681のQR読み取りがストアの更新情報で言及されています。
 
 ## 使い方
 
 `SKILL.md` と `skill.yaml` を、利用するAIエージェントのスキルフォルダにコピーしてください（例：Muse の `~/workspace/custom-skills/jpyc_payment_request/`）。SKILL.md形式に対応した他のエージェントでも利用できます。
 
-サンプルスクリプト:
+サンプルスクリプト（`--wallet` でウォレットを選びます）:
 
 ```bash
 python3 scripts/build_payment_link.py \
-  --contract 0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29 \
+  --wallet metamask \
   --to 0xRecipientAddress \
   --amount 100 \
   --chain 137
 ```
 
-EIP-681 URIとMetaMaskディープリンクを出力します。`--qr out.png` を付けるとQRコード画像も生成します（要 `pip install qrcode[pil]`）。
+`--wallet` には `metamask` / `trust` / `bitget` / `tokenpocket` が指定でき、そのウォレットの形式の送金リンクを出力します。コントラクトのデフォルトは新JPYC（Polygon）です。
 
 ## ガス代について
 

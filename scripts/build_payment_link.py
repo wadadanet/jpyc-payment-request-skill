@@ -1,56 +1,118 @@
 #!/usr/bin/env python3
-"""Build an EIP-681 payment request URI and a MetaMask deep link for an ERC-20 transfer.
+"""Build a JPYC payment-request deep link for the user's wallet.
 
-Example:
-    python3 build_payment_link.py \
-        --contract 0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29 \
-        --to 0xRecipientAddress --amount 100 --chain 137
+Ask the user which wallet they use, then generate that wallet's link with
+this script. Only wallets with a documented send format are supported.
 
-Add --qr out.png to also write a QR code image (requires: pip install qrcode[pil]).
+Supported wallets and amount conventions (see SKILL.md for sources):
+  metamask    raw integer amount (uint256). Verified end to end.
+  trust       human units, Trust Wallet universal asset id.
+  bitget      amount unit is not stated in Bitget's docs. Test small first.
+  tokenpocket decimal amount plus a separate decimal field, JSON payload.
+
+Usage:
+  build_payment_link.py --wallet metamask --to 0xRecipient --amount 100
+  build_payment_link.py --wallet trust --to 0xRecipient --amount 100
 """
 import argparse
-from decimal import Decimal
+import json
+import sys
+import urllib.parse
+import uuid
 
-KNOWN_JPYC = {
-    "0xe7c3d8c9a439fede00d2600032d5db0be71c3c29": "JPYC (2025, regulated)",
-    "0x431d5dff03120afa4bdf332c61a6e1766ef37bdb": "JPY Coin v2 (legacy)",
-}
+JPYC_NEW = "0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29"  # 2025 JPYC (Polygon/Ethereum/Avalanche)
+JPYC_OLD = "0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB"  # legacy JPY Coin v2
+
+SLIP44 = {1: 60, 137: 966, 56: 714}  # Trust Wallet coin ids
+BITGET_CHAIN = {1: "eth", 137: "matic", 56: "bnb", 8453: "base", 42161: "arbitrum", 10: "optimism"}
+TOKENPOCKET_NETWORK = {1: "ethereum", 137: "polygon"}
+
+
+def raw_amount(amount: str, decimals: int) -> int:
+    """Convert a human amount (up to 6 decimal places) to the raw integer."""
+    return int(round(float(amount) * 1_000_000)) * 10 ** (decimals - 6)
+
+
+def metamask(contract, to, raw, chain, native, value_wei):
+    if native:
+        return f"https://metamask.app.link/send/{to}@{chain}?value={value_wei}"
+    return (
+        f"https://metamask.app.link/send/{contract}@{chain}/transfer"
+        f"?address={to}&uint256={raw}"
+    )
+
+
+def trust(contract, to, amount, chain):
+    if chain not in SLIP44:
+        sys.exit(f"Trust Wallet: no verified SLIP-44 coin id for chain {chain}")
+    asset = f"c{SLIP44[chain]}_t{contract}"
+    q = urllib.parse.urlencode({"asset": asset, "address": to, "amount": amount})
+    print("note: Trust amount units follow the docs example (human units). "
+          "Confirm with a small test payment on first use.", file=sys.stderr)
+    return f"https://link.trustwallet.com/send?{q}"
+
+
+def bitget(contract, to, amount, chain):
+    if chain not in BITGET_CHAIN:
+        sys.exit(f"Bitget Wallet: no verified chain name for chain {chain}")
+    q = urllib.parse.urlencode({
+        "action": "send", "chain": BITGET_CHAIN[chain], "contract": contract,
+        "to": to, "amount": amount, "actionId": str(uuid.uuid4()), "version": "1",
+    })
+    print("note: Bitget docs do not state the amount unit and the format has not "
+          "been device-tested. Confirm with a small test payment on first use.",
+          file=sys.stderr)
+    return f"https://bkcode.vip?{q}"
+
+
+def tokenpocket(contract, to, amount, chain, decimals, symbol):
+    if chain not in TOKENPOCKET_NETWORK:
+        sys.exit(f"TokenPocket: no verified network name for chain {chain}")
+    payload = {
+        "action": "transfer",
+        "amount": float(amount),
+        "contract": contract,
+        "decimal": decimals,
+        "symbol": symbol,
+        "to": to,
+        "blockchains": [{"chainId": str(chain), "network": TOKENPOCKET_NETWORK[chain]}],
+        "protocol": "TokenPocket",
+        "version": "1.0",
+        "dappName": "JPYC Payment Request",
+        "actionId": str(uuid.uuid4()),
+    }
+    print("note: TokenPocket format follows the official docs (Ethereum example). "
+          "Confirm with a small test payment on first use.", file=sys.stderr)
+    return "tpoutside://pull.activity?param=" + urllib.parse.quote(
+        json.dumps(payload, separators=(",", ":")), safe="")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--contract", required=True, help="ERC-20 token contract address")
-    ap.add_argument("--to", required=True, help="Recipient address")
-    ap.add_argument("--amount", required=True, help="Amount in token units, e.g. 100 or 1.5")
-    ap.add_argument("--decimals", type=int, default=18, help="Token decimals (default 18)")
-    ap.add_argument("--chain", type=int, default=137, help="Chain ID (default 137 = Polygon)")
-    ap.add_argument("--qr", help="Optional path to write a QR code PNG of the EIP-681 URI")
+    ap.add_argument("--wallet", default="metamask",
+                    choices=["metamask", "trust", "bitget", "tokenpocket"],
+                    help="the wallet the user will pay from")
+    ap.add_argument("--to", required=True, help="recipient address")
+    ap.add_argument("--amount", default="1", help="amount in token units, e.g. 100 or 1.5")
+    ap.add_argument("--value-wei", help="native coin amount in wei (MetaMask --native)")
+    ap.add_argument("--contract", default=JPYC_NEW,
+                    help=f"token contract (default: 2025 JPYC {JPYC_NEW})")
+    ap.add_argument("--chain", type=int, default=137, help="chain id (default: 137 Polygon)")
+    ap.add_argument("--decimals", type=int, default=18)
+    ap.add_argument("--symbol", default="JPYC")
+    ap.add_argument("--native", action="store_true", help="native coin instead of a token")
     args = ap.parse_args()
 
-    raw = int(Decimal(args.amount) * (10 ** args.decimals))
-    uri = (
-        f"ethereum:{args.contract}@{args.chain}/transfer"
-        f"?address={args.to}&uint256={raw}"
-    )
-    link = (
-        f"https://metamask.app.link/send/{args.contract}@{args.chain}/transfer"
-        f"?address={args.to}&uint256={raw}"
-    )
-
-    kind = KNOWN_JPYC.get(args.contract.lower())
-    if kind:
-        print(f"Token: {kind}")
-    else:
-        print("Token: unknown contract, double-check the address before use")
-    print(f"EIP-681 URI: {uri}")
-    print(f"MetaMask deep link: {link}")
-
-    if args.qr:
-        import qrcode
-
-        img = qrcode.make(uri)
-        img.save(args.qr)
-        print(f"QR code written to {args.qr}")
+    raw = raw_amount(args.amount, args.decimals)
+    if args.wallet == "metamask":
+        print(metamask(args.contract, args.to, raw, args.chain, args.native, args.value_wei))
+    elif args.wallet == "trust":
+        print(trust(args.contract, args.to, args.amount, args.chain))
+    elif args.wallet == "bitget":
+        print(bitget(args.contract, args.to, args.amount, args.chain))
+    elif args.wallet == "tokenpocket":
+        print(tokenpocket(args.contract, args.to, args.amount, args.chain,
+                          args.decimals, args.symbol))
 
 
 if __name__ == "__main__":
