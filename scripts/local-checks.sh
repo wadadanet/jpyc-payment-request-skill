@@ -1,2 +1,2 @@
 #!/bin/sh
-run_check 'python scripts/check-python-syntax.py'
+run_check 'python3 scripts/check-python-syntax.py'
