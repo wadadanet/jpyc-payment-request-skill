@@ -1,0 +1,4 @@
+/.githooks/pre-push text eol=lf
+/scripts/install-hooks.sh text eol=lf
+/scripts/validate-local.sh text eol=lf
+/scripts/local-checks.sh text eol=lf
