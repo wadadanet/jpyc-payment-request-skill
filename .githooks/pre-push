@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+head=$(git rev-parse HEAD)
+validate=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_sha" in
+    0000000000000000000000000000000000000000) continue ;;
+  esac
+  pushed_commit=$(git rev-parse --verify "$local_sha^{commit}") || {
+    echo 'Push rejected: pushed object is not a commit or a tag resolving to a commit.' >&2
+    exit 1
+  }
+  if [ "$pushed_commit" != "$head" ]; then
+    echo "Push rejected: check out the pushed commit ($local_sha) and validate it." >&2
+    exit 1
+  fi
+  validate=1
+done
+[ "$validate" = 0 ] || sh scripts/validate-local.sh "$head"
